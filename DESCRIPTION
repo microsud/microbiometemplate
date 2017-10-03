@@ -1,0 +1,9 @@
+Package: microbiometemplate
+Title: Provides a standard template for data report of microbial community analysis.
+Version: 0.0.0.9000
+Authors@R: person("Sudarshan", "Shetty", email = "sudarshanshetty9@gmail.com", role = c("aut", "cre"))
+Description: microbiometemplate R package provides a simple template for analysis of microbial community analysis. This will aid in reproducibilty and transparency of data analysis.
+Depends: R (>= 3.4.1)
+License: Free to use
+Encoding: UTF-8
+LazyData: true
