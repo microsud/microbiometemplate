@@ -14,18 +14,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Microbiome analytics tool
 
-Reproducibilty is an essential aspect of data analysis. Especially for sequecing data for microbial community profilling. There are lack of standards to analysing and reporting data. This is mostly because there are simply some aspects of the data that we do not control. like which is the right choice of filtering, normalisation, transformation. In such cases it is important to have rational decision making and documenting it. Pre-processing is an essential step and in many instance is not given importance, as we biologists do not take these steps as seriously as it should be taken. To avoid this there are some common approaches to look at the data.  
+Reproducibilty is an essential aspect of data analysis. Especially for sequencing data for microbial community profilling. There are lack of standards to analysing and reporting data. This is mostly because there are simply some aspects of the data that we do not control. like which is the right choice of filtering, normalisation, transformation. In such cases it is important to have rational decision making and documenting it. Pre-processing is an essential step and in many instance is not given importance, as we biologists do not take these steps as seriously as it should be taken. To avoid this there are some common approaches to look at the data.  
 1. How many reads/samples? if there is large difference this may affect the choices you make for alpha diversity, betadiversity and differential abundance testing.
-2. How many reads/OTU ? this is aslo important to see of there are lot of OTUs with small mean & large coefficient of variation (C.V.).  
+2. How many reads/OTU ? this is aslo important to see if there are lot of OTUs with small mean & large coefficient of variation (C.V.).  
 
 This tempate for microbiome data analysis, handling and visualisation. This makes it easy to follow some standard procedures for looking at your data and reporting you results. This first-hand look at your data will aid in making different choices for more thorough and in-dept investagion.   
-You will need to install `microbiometemplate` document from github repo.
+You will need to install `microbiometemplate` document from github repo.  
+
+Check this link on [Organize your data and code](http://kbroman.org/steps2rr/pages/organize.html).    
+
 
 ## Load libraries  
 
 We have to load libraries click on the code tab on the left hand die of this doc for looking at the libraries that are installed. It is good to install these packages before.  
  
-
 ```{r load-libraries, warning=FALSE, message=FALSE}
 
 library(microbiome)
@@ -35,7 +37,8 @@ library(microbiometemplate)
 # library(picante)
 library(picante)
 library(data.table)
-
+library(DT)
+library(RColorBrewer)
 ```
 
 ## Set project attributes  
@@ -48,18 +51,27 @@ Fill the details accordingly.
 **Principal Investigator (s)** : Hauke Smidt 
 **Co-supervisor(s)** : XXXXX
 
-
 The next code chunk is where you put all the parameters for analysis. This is the basis for your prelimanry analysis.  
+
+```{r set-seed}
+
+#generate a random number 
+n <- runif(1, 0, 10^8) # keep this number stored as below instead of XXX when re running the codes.
+set.seed(n)
+
+```
+
+seed number(XXX) check this link [for more information](http://kbroman.org/steps2rr/pages/scripts.html)  
 
 ```{r set-attributes}
 
-otufile = "myBiom.biom"                     # input biom/shared/otutable as *csv file.
-mapping = "myMapping.csv"                   # input mapping file in *.csv format.
-taxonomy = NULL                             # taxonomy file in *.csv format.
-treefilename = "myTree.tre"                 # tree file as *.tre and not *.tree.
-type = "biom"                               # type of input either biom, mothur ..
-                                            # .. or csv file as *.tre and not *.tree.
-out_dir = "D:/Softwares/tes" #"F:/PATH/to/my/output/directory"  # path to the output directory.
+otufile = "myBiom.biom"               # input biom/shared/otutable as *csv file.
+mapping = "myMapping.csv"             # input mapping file in *.csv format.
+taxonomy = NULL                       # taxonomy file in *.csv format.
+treefilename = "myTree.tre"           # tree file as *.tre and not *.tree.
+type = "biom"                         # type of input either biom, mothur ..
+                                      # .. or csv file as *.tre and not *.tree.
+out_dir = "F:/PATH/to/my/output/directory"  # path to the output directory.
 VariableA = "MY_MainVariable"               # main variable of interest.
 VariableB = "MY_SecondaryVariable"          # secondary variable of interest.
 Distmethod = "bray"                         # choice of distance methods.
@@ -345,7 +357,7 @@ if (!is.na(samsize)) {
 
 
 otu_table_ps3 <- as.data.frame(ps3@otu_table)
-metadata_table_ps3  <- as.data.frame(ps3@sam_data)
+metadata_table_ps3  <- meta(ps3)
 
 message("include.root in pd is set to FALSE by default")
 
@@ -479,6 +491,106 @@ if (nrow(metadf) > 30) {
 
 ```
 
+## Beta Diversity (Ordinations) {.tabset}     
+
+
+### Bray-Curtis distance PCoA  
+
+The counts are log10(1+x) tranformed and then used for ordinations.
+
+```{r BC-PCoA, fig.height=4, fig.width=8}
+
+ps3.log <- microbiome::transform(ps3, "log10")
+
+bc.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "bray")
+
+bc.pcoa.plot <- plot_ordination(ps3.log, bc.pcoa, 
+                                type = "split", axes = 1:2,
+                                color = VariableA, shape = VariableB, 
+                                label = NULL, 
+                                title = "Bray-Curtis distance PCoA",
+                                justDF = FALSE)
+bc.pcoa.plot <- bc.pcoa.plot + theme_bw() + geom_point(size = 3)
+print(bc.pcoa.plot)
+
+ggsave("./BetaDiversity/Bray-Curtis distance PCoA.pdf", plot = bc.pcoa.plot, 
+      height = 6, width = 10)
+
+
+# Calculate bray curtis distance matrix
+ps3_bray <- phyloseq::distance(ps3.log, method = "bray")
+
+# use meta data from phylogenetic div code chunk.
+
+# Adonis test
+adonis(ps3_bray ~ VariableA, data = select.meta)
+
+
+# Homogeneity of dispersion test
+beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
+permutest(beta.bray)
+
+```
+
+
+### Weighted Unifrac distance PCoA  
+
+The counts are log10(1+x) tranformed and then used for ordinations.
+
+```{r wunifrac-MDS, fig.height=4, fig.width=8}
+
+wunifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "wunifrac")
+
+wunifrac.pcoa.plot <- plot_ordination(ps3.log, wunifrac.pcoa, 
+                                type = "split", axes = 1:2,
+                                color = VariableA, shape = VariableB, 
+                                label = NULL, 
+                                title = "Weighted Unifrac distance PCoA",
+                                justDF = FALSE)
+wunifrac.pcoa.plot <- wunifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
+print(wunifrac.pcoa.plot)
+
+ggsave("./BetaDiversity/Weighted Unifrac distance PCoA.pdf", plot = wunifrac.pcoa.plot, 
+      height = 6, width = 10)
+
+# Calculate bray curtis distance matrix
+ps3_wunifrac <- phyloseq::distance(ps3.log, method = "wunifrac")
+
+# use meta data from phylogenetic div code chunk.
+
+# Adonis test
+adonis(ps3_wunifrac ~ VariableA, data = select.meta)
+
+
+# Homogeneity of dispersion test
+beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
+permutest(beta.wunifrac)
+
+```
+
+### Unweighted Unifrac distance PCoA  
+
+The counts are log10(1+x) tranformed and then used for ordinations.  
+
+```{r unifrac-MDS, fig.height=4, fig.width=8}
+
+unifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "unifrac")
+
+unifrac.pcoa.plot <- plot_ordination(ps3.log, unifrac.pcoa, 
+                                type = "split", axes = 1:2,
+                                color = VariableA, shape = VariableB, 
+                                label = NULL, 
+                                title = "Unweighted Unifrac distance PCoA",
+                                justDF = FALSE)
+unifrac.pcoa.plot <- unifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
+print(unifrac.pcoa.plot)
+
+ggsave("./BetaDiversity/Unweighted Unifrac distance PCoA.pdf", plot = unifrac.pcoa.plot, 
+      height = 6, width = 10)
+
+message("Unweighted Unifrac distance gives negative values and standard anova and anoism cannot be used")
+
+```
 
 
 ```{r session-infor}
