@@ -239,7 +239,7 @@ saveRDS(ps2, "./PhyloseqObjects/ps_filtered.rds")
 
 message("Below is the content of filtered phyloseqobject (based on filterCount and filterPrev) stored as ps_filtered.rds")
 
-print(p2) 
+print(ps2) 
 
 Variance.plot.b <- qplot(log10(apply(otu_table(ps2), 1, var)), 
                          xlab = "log10(variance)", 
