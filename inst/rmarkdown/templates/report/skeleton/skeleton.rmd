@@ -48,7 +48,7 @@ Fill the details accordingly.
 **Project title** : Create a standard workflow for data reporting.  
 **Main author** : Sudarshan A Shetty  
 **contributor(s)** : XXXX  
-**Principal Investigator (s)** : Hauke Smidt 
+**Principal Investigator (s)** : Hauke Smidt   
 **Co-supervisor(s)** : XXXXX
 
 The next code chunk is where you put all the parameters for analysis. This is the basis for your prelimanry analysis.  
@@ -493,6 +493,7 @@ if (nrow(metadf) > 30) {
 
 ## Beta Diversity (Unconstrained Ordinations) {.tabset}     
 
+Here, commonly used metrics for betadiversity are depicted. Additionally, adonis test and Permutation test for homogeneity of multivariate dispersions (betadisper) results where applicable are given for the main variable i.e. stored in VariableA. The default transformation is log10(1 + x) as zeros are common to microbiome count data.     
 
 ### Bray-Curtis distance PCoA  
 
@@ -531,19 +532,18 @@ if (UnConstOrd == TRUE){
     # use meta data from phylogenetic div code chunk.
     
     # Adonis test
-    adonis(ps3_bray ~ VariableA, data = select.meta)
+    print(adonis(ps3_bray ~ VariableA, data = select.meta))
     
     
     # Homogeneity of dispersion test
     beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
-    permutest(beta.bray)
+    print(permutest(beta.bray))
 
 }
 
 
 
 ```
-
 
 ### Weighted Unifrac distance PCoA  
 
@@ -584,12 +584,12 @@ if (UnConstOrd == TRUE){
     # use meta data from phylogenetic div code chunk.
     
     # Adonis test
-    adonis(ps3_wunifrac ~ VariableA, data = select.meta)
+    print(adonis(ps3_wunifrac ~ VariableA, data = select.meta))
     
     
     # Homogeneity of dispersion test
     beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
-    permutest(beta.wunifrac)
+    print(permutest(beta.wunifrac))
 
 }
 
