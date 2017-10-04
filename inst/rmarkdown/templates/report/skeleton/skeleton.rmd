@@ -74,11 +74,11 @@ type = "biom"                         # type of input either biom, mothur ..
 out_dir = "F:/PATH/to/my/output/directory"  # path to the output directory.
 VariableA = "MY_MainVariable"               # main variable of interest.
 VariableB = "MY_SecondaryVariable"          # secondary variable of interest.
-Distmethod = "bray"                         # choice of distance methods.
-OrdinatMethod = "MDS"                       # choice of ordination methods.
+UnConstOrd = TRUE                           # Unconstrained ORDINATION TRUE or FALSE.
+heatmap = TRUE                              # TRUE or FALSE
 filterCount = 4                             # Filter OTUs below this count number.
 filterPrev = 0.01                           # filter parameter for OTUs, prevalence in dataset 0.01 = 1%.
-col.palette = "Set2"                        # choice of color (RColorbrewer)
+col.palette = "Paired"                        # choice of color (RColorbrewer)
 filterpseq = TRUE                           # filter phyloseq will be saved
 samsize=NA                                  # rarefying depth
 
@@ -491,7 +491,7 @@ if (nrow(metadf) > 30) {
 
 ```
 
-## Beta Diversity (Ordinations) {.tabset}     
+## Beta Diversity (Unconstrained Ordinations) {.tabset}     
 
 
 ### Bray-Curtis distance PCoA  
@@ -500,35 +500,47 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r BC-PCoA, fig.height=4, fig.width=8}
 
-ps3.log <- microbiome::transform(ps3, "log10")
-
-bc.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "bray")
-
-bc.pcoa.plot <- plot_ordination(ps3.log, bc.pcoa, 
+if (UnConstOrd == TRUE){
+  
+  ps3.log <- microbiome::transform(ps3, "log10")
+  
+  bc.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "bray")
+  
+  bc.pcoa.plot <- plot_ordination(ps3.log, bc.pcoa, 
                                 type = "split", axes = 1:2,
                                 color = VariableA, shape = VariableB, 
                                 label = NULL, 
                                 title = "Bray-Curtis distance PCoA",
                                 justDF = FALSE)
-bc.pcoa.plot <- bc.pcoa.plot + theme_bw() + geom_point(size = 3)
-print(bc.pcoa.plot)
+  
+  bc.pcoa.plot <- bc.pcoa.plot + theme_bw() + geom_point(size = 3)
+  
+  print(bc.pcoa.plot)
+  
+  ggsave(
+    "./BetaDiversity/Bray-Curtis distance PCoA.pdf",
+    plot = bc.pcoa.plot,
+    height = 6,
+    width = 10
+    )
+    
+    
+    # Calculate bray curtis distance matrix
+    ps3_bray <- phyloseq::distance(ps3.log, method = "bray")
+    
+    # use meta data from phylogenetic div code chunk.
+    
+    # Adonis test
+    adonis(ps3_bray ~ VariableA, data = select.meta)
+    
+    
+    # Homogeneity of dispersion test
+    beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
+    permutest(beta.bray)
 
-ggsave("./BetaDiversity/Bray-Curtis distance PCoA.pdf", plot = bc.pcoa.plot, 
-      height = 6, width = 10)
+}
 
 
-# Calculate bray curtis distance matrix
-ps3_bray <- phyloseq::distance(ps3.log, method = "bray")
-
-# use meta data from phylogenetic div code chunk.
-
-# Adonis test
-adonis(ps3_bray ~ VariableA, data = select.meta)
-
-
-# Homogeneity of dispersion test
-beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
-permutest(beta.bray)
 
 ```
 
@@ -539,32 +551,47 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r wunifrac-MDS, fig.height=4, fig.width=8}
 
-wunifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "wunifrac")
+if (UnConstOrd == TRUE){
+  
+  wunifrac.pcoa <-
+    ordinate(ps3.log, method = "PCoA", distance = "wunifrac")
+    
+    wunifrac.pcoa.plot <- plot_ordination(
+    ps3.log,
+    wunifrac.pcoa,
+    type = "split",
+    axes = 1:2,
+    color = VariableA,
+    shape = VariableB,
+    label = NULL,
+    title = "Weighted Unifrac distance PCoA",
+    justDF = FALSE
+    )
+    wunifrac.pcoa.plot <-
+    wunifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
+    print(wunifrac.pcoa.plot)
+    
+    ggsave(
+    "./BetaDiversity/Weighted Unifrac distance PCoA.pdf",
+    plot = wunifrac.pcoa.plot,
+    height = 6,
+    width = 10
+    )
+    
+    # Calculate bray curtis distance matrix
+    ps3_wunifrac <- phyloseq::distance(ps3.log, method = "wunifrac")
+    
+    # use meta data from phylogenetic div code chunk.
+    
+    # Adonis test
+    adonis(ps3_wunifrac ~ VariableA, data = select.meta)
+    
+    
+    # Homogeneity of dispersion test
+    beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
+    permutest(beta.wunifrac)
 
-wunifrac.pcoa.plot <- plot_ordination(ps3.log, wunifrac.pcoa, 
-                                type = "split", axes = 1:2,
-                                color = VariableA, shape = VariableB, 
-                                label = NULL, 
-                                title = "Weighted Unifrac distance PCoA",
-                                justDF = FALSE)
-wunifrac.pcoa.plot <- wunifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
-print(wunifrac.pcoa.plot)
-
-ggsave("./BetaDiversity/Weighted Unifrac distance PCoA.pdf", plot = wunifrac.pcoa.plot, 
-      height = 6, width = 10)
-
-# Calculate bray curtis distance matrix
-ps3_wunifrac <- phyloseq::distance(ps3.log, method = "wunifrac")
-
-# use meta data from phylogenetic div code chunk.
-
-# Adonis test
-adonis(ps3_wunifrac ~ VariableA, data = select.meta)
-
-
-# Homogeneity of dispersion test
-beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
-permutest(beta.wunifrac)
+}
 
 ```
 
@@ -574,23 +601,76 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r unifrac-MDS, fig.height=4, fig.width=8}
 
-unifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "unifrac")
+if (UnConstOrd == TRUE){
 
-unifrac.pcoa.plot <- plot_ordination(ps3.log, unifrac.pcoa, 
-                                type = "split", axes = 1:2,
-                                color = VariableA, shape = VariableB, 
-                                label = NULL, 
-                                title = "Unweighted Unifrac distance PCoA",
-                                justDF = FALSE)
-unifrac.pcoa.plot <- unifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
-print(unifrac.pcoa.plot)
-
-ggsave("./BetaDiversity/Unweighted Unifrac distance PCoA.pdf", plot = unifrac.pcoa.plot, 
-      height = 6, width = 10)
-
-message("Unweighted Unifrac distance gives negative values and standard anova and anoism cannot be used")
+  unifrac.pcoa <-
+    ordinate(ps3.log, method = "PCoA", distance = "unifrac")
+    
+    unifrac.pcoa.plot <- plot_ordination(
+    ps3.log,
+    unifrac.pcoa,
+    type = "split",
+    axes = 1:2,
+    color = VariableA,
+    shape = VariableB,
+    label = NULL,
+    title = "Unweighted Unifrac distance PCoA",
+    justDF = FALSE
+    )
+    unifrac.pcoa.plot <-
+    unifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
+    print(unifrac.pcoa.plot)
+    
+    ggsave(
+    "./BetaDiversity/Unweighted Unifrac distance PCoA.pdf",
+    plot = unifrac.pcoa.plot,
+    height = 6,
+    width = 10
+    )
+    
+    message(
+    "Unweighted Unifrac distance gives negative values and standard anova and anoism cannot be used"
+    )
+}
 
 ```
+
+
+## Heatmap  
+
+```{r heatmap}
+
+if (heatmap == TRUE) {
+  
+  pseq.fam <- aggregate_taxa(ps3.com, "Family")
+  pseq.famlog10 <- transform(pseq.fam, "log10")
+  ps3.log.heatmap <- plot_composition(pseq.famlog10, 
+                             sample.sort = VariableB, 
+                             otu.sort = NULL, 
+                             x.label = VariableA, 
+                             plot.type = "heatmap", 
+                             verbose = FALSE)
+
+  ps3.log.heatmap <- ps3.log.heatmap + theme(legend.position = "bottom") + 
+    theme_bw() + theme(axis.text.x = element_text(angle = 90)) + 
+    ggtitle("Heatmap Log10(1+x) tranformed") + 
+    theme(axis.text = element_text(face = "italic"))
+  
+  ps3.log.heatmap <- ps3.log.heatmap + 
+    scale_fill_distiller(palette = "YlOrRd", trans = "reverse")
+
+  print(ps3.log.heatmap)
+  
+}
+
+ggsave("./Others/Heatmap Log10(1+x) tranformed Family.pdf", 
+       plot = ps3.log.heatmap,
+       height = 6,
+       width = 10)
+
+```
+
+
 
 
 ```{r session-infor}
