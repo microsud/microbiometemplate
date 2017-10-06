@@ -395,7 +395,6 @@ if (!is.na(samsize)) {
 ```
 
 
-
 ## Barplot composition  {.tabset}   
 
 Having a look at the phyloegnetic composition of you data is useful for many reasons. FOr this purpose we have two Phylum and Family level plots.
@@ -464,7 +463,7 @@ if (nrow(metadf) > 30) {
 
 ### Family  
 
-```{r fig.height= 6, fig.width=14}
+```{r fig.height= 8, fig.width=24}
 
 colourCount = length(unique(taxic$Family))  #define number of variable colors based on number of Family (change the level accordingly to phylum/class/order)
 getPalette = colorRampPalette(brewer.pal(12, col.palette))  # change the palette as well as the number of colors will change according to palette.
@@ -491,9 +490,8 @@ if (nrow(metadf) > 30) {
 
 ```
 
-## Beta Diversity (Unconstrained Ordinations) {.tabset}     
+## Beta Diversity (Ordinations) {.tabset}     
 
-Here, commonly used metrics for betadiversity are depicted. Additionally, adonis test and Permutation test for homogeneity of multivariate dispersions (betadisper) results where applicable are given for the main variable i.e. stored in VariableA. The default transformation is log10(1 + x) as zeros are common to microbiome count data.     
 
 ### Bray-Curtis distance PCoA  
 
@@ -501,49 +499,38 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r BC-PCoA, fig.height=4, fig.width=8}
 
-if (UnConstOrd == TRUE){
-  
-  ps3.log <- microbiome::transform(ps3, "log10")
-  
-  bc.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "bray")
-  
-  bc.pcoa.plot <- plot_ordination(ps3.log, bc.pcoa, 
+ps3.log <- microbiome::transform(ps3, "log10")
+
+bc.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "bray")
+
+bc.pcoa.plot <- plot_ordination(ps3.log, bc.pcoa, 
                                 type = "split", axes = 1:2,
                                 color = VariableA, shape = VariableB, 
                                 label = NULL, 
                                 title = "Bray-Curtis distance PCoA",
                                 justDF = FALSE)
-  
-  bc.pcoa.plot <- bc.pcoa.plot + theme_bw() + geom_point(size = 3)
-  
-  print(bc.pcoa.plot)
-  
-  ggsave(
-    "./BetaDiversity/Bray-Curtis distance PCoA.pdf",
-    plot = bc.pcoa.plot,
-    height = 6,
-    width = 10
-    )
-    
-    
-    # Calculate bray curtis distance matrix
-    ps3_bray <- phyloseq::distance(ps3.log, method = "bray")
-    
-    # use meta data from phylogenetic div code chunk.
-    
-    # Adonis test
-    print(adonis(ps3_bray ~ VariableA, data = select.meta))
-    
-    
-    # Homogeneity of dispersion test
-    beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
-    print(permutest(beta.bray))
+bc.pcoa.plot <- bc.pcoa.plot + theme_bw() + geom_point(size = 2)
+print(bc.pcoa.plot)
 
-}
+ggsave("./BetaDiversity/Bray-Curtis distance PCoA.pdf", plot = bc.pcoa.plot, 
+      height = 6, width = 10)
 
 
+# Calculate bray curtis distance matrix
+ps3_bray <- phyloseq::distance(ps3.log, method = "bray")
+
+# use meta data from phylogenetic div code chunk.
+
+# Adonis test
+adonis(ps3_bray ~ VariableA, data = select.meta)
+
+
+# Homogeneity of dispersion test
+beta.bray <- betadisper(ps3_bray, select.meta$VariableA)
+permutest(beta.bray)
 
 ```
+
 
 ### Weighted Unifrac distance PCoA  
 
@@ -551,47 +538,32 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r wunifrac-MDS, fig.height=4, fig.width=8}
 
-if (UnConstOrd == TRUE){
-  
-  wunifrac.pcoa <-
-    ordinate(ps3.log, method = "PCoA", distance = "wunifrac")
-    
-    wunifrac.pcoa.plot <- plot_ordination(
-    ps3.log,
-    wunifrac.pcoa,
-    type = "split",
-    axes = 1:2,
-    color = VariableA,
-    shape = VariableB,
-    label = NULL,
-    title = "Weighted Unifrac distance PCoA",
-    justDF = FALSE
-    )
-    wunifrac.pcoa.plot <-
-    wunifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
-    print(wunifrac.pcoa.plot)
-    
-    ggsave(
-    "./BetaDiversity/Weighted Unifrac distance PCoA.pdf",
-    plot = wunifrac.pcoa.plot,
-    height = 6,
-    width = 10
-    )
-    
-    # Calculate bray curtis distance matrix
-    ps3_wunifrac <- phyloseq::distance(ps3.log, method = "wunifrac")
-    
-    # use meta data from phylogenetic div code chunk.
-    
-    # Adonis test
-    print(adonis(ps3_wunifrac ~ VariableA, data = select.meta))
-    
-    
-    # Homogeneity of dispersion test
-    beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
-    print(permutest(beta.wunifrac))
+wunifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "wunifrac")
 
-}
+wunifrac.pcoa.plot <- plot_ordination(ps3.log, wunifrac.pcoa, 
+                                type = "split", axes = 1:2,
+                                color = VariableA, shape = VariableB, 
+                                label = NULL, 
+                                title = "Weighted Unifrac distance PCoA",
+                                justDF = FALSE)
+wunifrac.pcoa.plot <- wunifrac.pcoa.plot + theme_bw() + geom_point(size = 2)
+print(wunifrac.pcoa.plot)
+
+ggsave("./BetaDiversity/Weighted Unifrac distance PCoA.pdf", plot = wunifrac.pcoa.plot, 
+      height = 6, width = 10)
+
+# Calculate bray curtis distance matrix
+ps3_wunifrac <- phyloseq::distance(ps3.log, method = "wunifrac")
+
+# use meta data from phylogenetic div code chunk.
+
+# Adonis test
+adonis(ps3_wunifrac ~ VariableA, data = select.meta)
+
+
+# Homogeneity of dispersion test
+beta.wunifrac <- betadisper(ps3_wunifrac, select.meta$VariableA)
+permutest(beta.wunifrac)
 
 ```
 
@@ -601,39 +573,24 @@ The counts are log10(1+x) tranformed and then used for ordinations.
 
 ```{r unifrac-MDS, fig.height=4, fig.width=8}
 
-if (UnConstOrd == TRUE){
+unifrac.pcoa <- ordinate(ps3.log, method = "PCoA", distance = "unifrac")
 
-  unifrac.pcoa <-
-    ordinate(ps3.log, method = "PCoA", distance = "unifrac")
-    
-    unifrac.pcoa.plot <- plot_ordination(
-    ps3.log,
-    unifrac.pcoa,
-    type = "split",
-    axes = 1:2,
-    color = VariableA,
-    shape = VariableB,
-    label = NULL,
-    title = "Unweighted Unifrac distance PCoA",
-    justDF = FALSE
-    )
-    unifrac.pcoa.plot <-
-    unifrac.pcoa.plot + theme_bw() + geom_point(size = 3)
-    print(unifrac.pcoa.plot)
-    
-    ggsave(
-    "./BetaDiversity/Unweighted Unifrac distance PCoA.pdf",
-    plot = unifrac.pcoa.plot,
-    height = 6,
-    width = 10
-    )
-    
-    message(
-    "Unweighted Unifrac distance gives negative values and standard anova and anoism cannot be used"
-    )
-}
+unifrac.pcoa.plot <- plot_ordination(ps3.log, unifrac.pcoa, 
+                                type = "split", axes = 1:2,
+                                color = VariableA, shape = VariableB, 
+                                label = NULL, 
+                                title = "Unweighted Unifrac distance PCoA",
+                                justDF = FALSE)
+unifrac.pcoa.plot <- unifrac.pcoa.plot + theme_bw() + geom_point(size = 2)
+print(unifrac.pcoa.plot)
+
+ggsave("./BetaDiversity/Unweighted Unifrac distance PCoA.pdf", plot = unifrac.pcoa.plot, 
+      height = 6, width = 10)
+
+message("Unweighted Unifrac distance gives negative values and standard anova and anoism cannot be used")
 
 ```
+
 
 
 ## Heatmap  
